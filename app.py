@@ -8,8 +8,12 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-connect_db(app)
-db.create_all()
+app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql:///adopt"
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+with app.app_context():
+    connect_db(app)
+    db.create_all()
 
 toolbar = DebugToolbarExtension(app)
 
@@ -27,7 +31,7 @@ def add_pet():
 
     form = AddPetForm()
 
-    if form.validate_on_submit():
+    if form.is_submitted() and form.validate():
         data = {k: v for k, v in form.data.items() if k != "csrf_token"}
         new_pet = Pet(**data)
         # new_pet = Pet(name=form.name.data, age=form.age.data, ...)
@@ -48,7 +52,7 @@ def edit_pet(pet_id):
     pet = Pet.query.get_or_404(pet_id)
     form = EditPetForm(obj=pet)
 
-    if form.validate_on_submit():
+    if form.is_submitted() and form.validate():
         pet.notes = form.notes.data
         pet.available = form.available.data
         pet.photo_url = form.photo_url.data
